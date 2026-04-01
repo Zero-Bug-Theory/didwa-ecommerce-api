@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-
 const productController = require("../controllers/productController");
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
@@ -19,11 +18,12 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 
+router.get('/search', productController.searchProducts)
+
+
 // ✅ Category route (FIXED)
-router.get("/category/:category", productController.getProductsByCategory);
+router.get("/api/products/category/:category", productController.getProductsByCategory);
 
-
-// Add product route (admin only)
 router.post(
   "/",
   verifyToken,
@@ -31,7 +31,6 @@ router.post(
   upload.single("image"),
   productController.createProduct
 );
-
 // Other product routes
 router.get("/", productController.getAllProducts);
 router.get("/search", productController.searchProducts);
