@@ -5,7 +5,7 @@ const db = require("../config/db");
 
 exports.register = async (req, res) => {
   const { name, email, password } = req.body;
-  const role = user; // default
+  const role = User; // default
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
