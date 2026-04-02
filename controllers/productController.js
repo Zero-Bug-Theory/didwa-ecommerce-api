@@ -45,7 +45,7 @@ exports.getAllProducts = async (_req, res) => {
 
     res.status(500).json({
       message: "Error fetching products",
-      error: error.message,
+      error: error.message || error.toString()
     });
   }
 };
