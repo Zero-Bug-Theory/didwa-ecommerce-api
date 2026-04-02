@@ -61,9 +61,13 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
   try {
     // 1️⃣ Get user from DB
-    const [rows] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
+   const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
     const user = rows[0];
 
     if (rows.length === 0) {
@@ -72,7 +76,8 @@ exports.login = async (req, res) => {
 
 
     // 2️⃣ Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
+    // const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = password === user.password;
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
