@@ -92,30 +92,38 @@ exports.getProductsByCategory = async (req, res) => {
 
 // ✅ Search products
 // productsController.js
-exports.searchProducts = (req, res) => {
-  const searchQuery = (req.query.q || "").trim();
-  const selectedCategory = req.query.category || "All";
+exports.searchProducts = async (req, res) => {
+  try {
+    const searchQuery = (req.query.q || "").trim();
+    const selectedCategory = req.query.category || "All";
 
-  // Split search into words for fuzzy matching
-  const keywords = searchQuery.split(" ").filter(Boolean);
+    const keywords = searchQuery.split(" ").filter(Boolean);
 
-  // Base SQL
-  let sql = "SELECT * FROM products WHERE 1=1";
-  const params = [];
+    let sql = "SELECT * FROM products WHERE 1=1";
+    const params = [];
 
-  if (keywords.length > 0) {
-    const conditions = keywords.map(() => "(LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))");
-    sql += " AND " + conditions.join(" AND ");
-    keywords.forEach(kw => {
-      const val = `%${kw}%`;
-      params.push(val, val);
-    });
+    if (keywords.length > 0) {
+      const conditions = keywords.map(() => "(LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))");
+      sql += " AND " + conditions.join(" AND ");
+      keywords.forEach(kw => {
+        const val = `%${kw}%`;
+        params.push(val, val);
+      });
+    }
+
+    if (selectedCategory !== "All") {
+      sql += " AND category = ?";
+      params.push(selectedCategory);
+    }
+
+    const [results] = await db.query(sql, params);
+
+    res.json(results);
+  } catch (err) {
+    console.error("SEARCH ERROR:", err);
+    res.status(500).json({ error: err.message });
   }
 
-  if (selectedCategory !== "All") {
-    sql += " AND category = ?";
-    params.push(selectedCategory);
-  }
 
   db.query(sql, params, (err, results) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -129,7 +137,7 @@ exports.updateProduct = async (req, res) => {
   const { name, price, description, category, image } = req.body;
 
   try {
-    await db.promise().query(
+    await db.query(
       "UPDATE products SET name=?, price=?, description=?, category=?, image=? WHERE id=?",
       [name, price, description, category, image, id]
     );
@@ -143,7 +151,7 @@ exports.updateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   const { id } = req.params;
   try {
-    await db.promise().query("DELETE FROM products WHERE id=?", [id]);
+    await db.query("DELETE FROM products WHERE id=?", [id]);
     res.json({ message: "Product deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });

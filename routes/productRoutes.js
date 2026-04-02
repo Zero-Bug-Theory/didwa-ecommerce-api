@@ -38,4 +38,14 @@ router.get("/:id", productController.getProductById);
 router.put("/:id", verifyToken, isAdmin, productController.updateProduct);
 router.delete("/:id", verifyToken, isAdmin, productController.deleteProduct);
 
+app.get("/debug-db", async (req, res) => {
+  try {
+    const [rows] = await db.query("SHOW TABLES");
+    res.json(rows);
+  } catch (err) {
+    console.error("DB ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
