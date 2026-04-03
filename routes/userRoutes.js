@@ -56,6 +56,6 @@ router.post("/products", verifyToken, isAdmin, upload.single("image"), async (re
   }
 });
 
-const upload = multer({ storage });
+// const upload = multer({ storage });
 router.post("/upload", verifyToken, upload.single("image"), userController.uploadProfileImage);
 module.exports = router;
