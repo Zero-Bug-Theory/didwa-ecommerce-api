@@ -17,8 +17,8 @@ exports.updateUser = async (req, res) => {
 
   try {
     await db.query(
-      "UPDATE users SET name=?, email=?, role=? WHERE id=?",
-      [name, email, role, id]
+      "UPDATE users SET name=?, phone=?, address=?, email=?, role=? WHERE id=?",
+      [name, phone, address, email, role, id]
     );
     res.json({ message: "User updated successfully" });
   } catch (err) {
