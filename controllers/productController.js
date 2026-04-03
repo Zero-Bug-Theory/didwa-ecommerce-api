@@ -103,9 +103,12 @@ exports.searchProducts = async (req, res) => {
     const params = [];
 
     if (keywords.length > 0) {
-      const conditions = keywords.map(() => "(LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))");
+      const conditions = keywords.map(() =>
+        "(LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))"
+      );
       sql += " AND " + conditions.join(" AND ");
-      keywords.forEach(kw => {
+
+      keywords.forEach((kw) => {
         const val = `%${kw}%`;
         params.push(val, val);
       });
@@ -118,18 +121,13 @@ exports.searchProducts = async (req, res) => {
 
     const [results] = await db.query(sql, params);
 
-    res.json(results);
+    res.json({ products: results }); // ✅ clean response
   } catch (err) {
     console.error("SEARCH ERROR:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
-
-
-  db.query(sql, params, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results); // returns array of products
-  });
 };
+
 
 // Update Product
 exports.updateProduct = async (req, res) => {
