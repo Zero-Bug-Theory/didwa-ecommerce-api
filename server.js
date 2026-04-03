@@ -1,6 +1,10 @@
 const path = require("path");
 process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception:", err);
+  console.error("UNCAUGHT EXCEPTION:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION:", err);
 });
 
 const express = require("express");
