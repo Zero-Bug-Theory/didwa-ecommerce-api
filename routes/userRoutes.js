@@ -4,6 +4,7 @@ const userController = require("../controllers/userController");
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
 const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() });
 
 
 // Admin-only routes
@@ -19,16 +20,12 @@ router.get("/me", verifyToken, userController.getUserProfile);
 router.put("/update", verifyToken, userController.updateProfile);
 
 // ✅ UPLOAD IMAGE
-
-
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
   },
 });
-
-
 
 
 router.post("/products", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
@@ -46,7 +43,6 @@ router.post("/products", verifyToken, isAdmin, upload.single("image"), async (re
           "INSERT INTO products (name, description, price, category, image_url) VALUES (?, ?, ?, ?, ?)",
           [name, description, price, category, result.secure_url]
         );
-
         res.status(201).json({ message: "Product added successfully", product: { id: rows.insertId, name, image: result.secure_url } });
       }
     );
@@ -61,7 +57,5 @@ router.post("/products", verifyToken, isAdmin, upload.single("image"), async (re
 });
 
 const upload = multer({ storage });
-
 router.post("/upload", verifyToken, upload.single("image"), userController.uploadProfileImage);
-
 module.exports = router;
