@@ -31,5 +31,3 @@ const upload = multer({ storage });
 router.post("/upload", verifyToken, upload.single("image"), userController.uploadProfileImage);
 
 module.exports = router;
-
-module.exports = router;
