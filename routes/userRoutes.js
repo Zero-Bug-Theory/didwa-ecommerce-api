@@ -3,7 +3,7 @@ const router = express.Router();
 const userController = require("../controllers/userController");
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
-
+const multer = require("multer");
 
 
 // Admin-only routes
@@ -19,7 +19,7 @@ router.get("/me", verifyToken, userController.getUserProfile);
 router.put("/update", verifyToken, userController.updateProfile);
 
 // ✅ UPLOAD IMAGE
-const multer = require("multer");
+
 
 const storage = multer.diskStorage({
   destination: "uploads/",
