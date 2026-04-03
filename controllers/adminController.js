@@ -14,9 +14,9 @@ exports.getDashboardStats = async (req, res) => {
       "SELECT COUNT(*) AS total FROM orders WHERE status='pending'"
     );
 
-    const [outOfStock] = await db.query(
-      "SELECT COUNT(*) AS total FROM products WHERE stock = 0"
-    );
+    // const [outOfStock] = await db.query(
+    //   "SELECT COUNT(*) AS total FROM products WHERE stock = 0"
+    // );
 
     res.json({
       totalUsers: users[0].total,
@@ -24,7 +24,7 @@ exports.getDashboardStats = async (req, res) => {
       totalOrders: orders[0].total,
       totalRevenue: revenue[0].total || 0,
       pendingOrders: pending[0].total,
-      outOfStock: outOfStock[0].total,
+      // outOfStock: outOfStock[0].total,
     });
   } catch (err) {
     console.error(err);
