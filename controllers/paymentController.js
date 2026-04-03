@@ -38,7 +38,7 @@ exports.initializePayment = async (req, res) => {
       {
         email: "customer@email.com", // later from user
         amount: amount,
-        callback_url: "http://localhost:3000/payment-success",
+        callback_url: "https://didwa-ecommerce-api-1.onrender.com/payment-success",
       },
       {
         headers: {
