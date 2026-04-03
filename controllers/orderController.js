@@ -166,4 +166,28 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-// 0551234987 --> Momo test number
+exports.getOrderDetails = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+
+    const [order] = await db.query(
+      "SELECT * FROM orders WHERE id = ?",
+      [orderId]
+    );
+
+    const [items] = await db.query(
+      `SELECT oi.*, p.name, p.image 
+       FROM order_items oi
+       JOIN products p ON oi.product_id = p.id
+       WHERE oi.order_id = ?`,
+      [orderId]
+    );
+
+    res.json({
+      order: order[0],
+      items,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
