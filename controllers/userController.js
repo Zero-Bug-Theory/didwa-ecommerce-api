@@ -16,7 +16,7 @@ exports.updateUser = async (req, res) => {
   const { name, email, role } = req.body;
 
   try {
-    await db.promise().query(
+    await db.query(
       "UPDATE users SET name=?, email=?, role=? WHERE id=?",
       [name, email, role, id]
     );
