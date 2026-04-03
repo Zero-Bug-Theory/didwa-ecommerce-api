@@ -13,7 +13,7 @@ exports.getAllUsers = async (req, res) => {
 // Update user
 exports.updateUser = async (req, res) => {
   const { id } = req.params;
-  const { name, email, role } = req.body;
+  const { name, phone, address, email, role } = req.body; 
 
   try {
     await db.query(
