@@ -5,6 +5,10 @@ const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../config/cloudinary");
 const db = require("../config/db");
 
+const multer = require('multer');
+const { v2: cloudinary } = require('cloudinary');
+const streamifier = require('streamifier');
+
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
 const productController = require("../controllers/productController");
@@ -21,35 +25,40 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
+// multer memory storage
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-// ✅ CREATE PRODUCT (ONLY ONE ROUTE!)
+// route example
 router.post("/", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "Image required" });
+
+  const streamUpload = (reqFile) => {
+    return new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: "didwa_products" },
+        (error, result) => {
+          if (result) resolve(result);
+          else reject(error);
+        }
+      );
+      streamifier.createReadStream(reqFile.buffer).pipe(stream);
+    });
+  };
+
   try {
-    const { name, description, price, category } = req.body;
+    const result = await streamUpload(req.file);
+    const imageUrl = result.secure_url;
 
-    if (!req.file) {
-      return res.status(400).json({ message: "Image required" });
-    }
-
-    const imageUrl = req.file.path;
-
-    const [result] = await db.query(
+    const [dbResult] = await db.query(
       "INSERT INTO products (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)",
-      [name, description, price, category, imageUrl]
+      [req.body.name, req.body.description, req.body.price, req.body.category, imageUrl]
     );
 
-    res.status(201).json({
-      message: "Product added successfully",
-      product: {
-        id: result.insertId,
-        name,
-        image: imageUrl,
-      },
-    });
-
+    res.status(201).json({ message: "Product added successfully", image: imageUrl, id: dbResult.insertId });
   } catch (err) {
-    console.error("CREATE PRODUCT ERROR:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Upload failed", error: err.message });
   }
 });
 
