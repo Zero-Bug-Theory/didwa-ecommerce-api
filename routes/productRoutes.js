@@ -4,6 +4,7 @@ const productController = require("../controllers/productController");
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
 const multer = require("multer");
+const db = require("../config/db");
 
 // Setup multer storage
 const storage = multer.diskStorage({
