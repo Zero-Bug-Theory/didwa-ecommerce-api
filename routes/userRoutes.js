@@ -6,7 +6,7 @@ const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
 const multer = require("multer");
 const path = require('path');
-const path = require("path");
+
 
 // ✅ DEFINE STORAGE FIRST
 const storage = multer.diskStorage({
