@@ -7,14 +7,6 @@ const multer = require("multer");
 const upload = multer({ storage });
 
 
-// ✅ UPLOAD IMAGE
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-
 router.post("/products/", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
   try {
     const { name, description, price, category } = req.body;
@@ -56,6 +48,14 @@ router.get("/me", verifyToken, userController.getUserProfile);
 
 // ✅ UPDATE PROFILE
 router.put("/update", verifyToken, userController.updateProfile);
+
+// ✅ UPLOAD IMAGE
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
 
 router.post("/upload", verifyToken, upload.single("image"), userController.uploadProfileImage);
 module.exports = router;
