@@ -3,6 +3,7 @@ const Product = require("../models/productModel");
 const db = require("../config/db"); // your MySQL connection
 const fs = require("fs");// your MySQL connection
 const multer = require("multer");
+const path = require('path');
 
 // Set up multer to store uploaded images in "uploads/" folder
 const storage = multer.diskStorage({
@@ -18,22 +19,59 @@ const upload = multer({ storage: storage });
 
 // ✅ Create product (admin only)
 // productController.js
+// exports.createProduct = async (req, res) => {
+//   try {
+//     const { name, description, price, category } = req.body;
+//     const image = req.file ? req.file.filename : null;
+
+//     if (!name || !description || !price || !category || !image) {
+//       return res.status(400).json({ message: "All fields are required" });
+//     }
+
+//     const result = await Product.create(name, description, price, image, category);
+
+//     res.status(201).json({ message: "Product added successfully", productId: result.insertId });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Server error", error });
+//   }
+// };
+
+
+// Handle product creation with image upload
 exports.createProduct = async (req, res) => {
   try {
-    const { name, description, price, category } = req.body;
-    const image = req.file ? req.file.filename : null;
+    let imagePath = null;
 
-    if (!name || !description || !price || !category || !image) {
-      return res.status(400).json({ message: "All fields are required" });
+    // Multer stores file info in req.file
+    if (req.file) {
+      imagePath = req.file.filename; // save just the filename
     }
 
-    const result = await Product.create(name, description, price, image, category);
+    const { name, description, price, category } = req.body;
 
-    res.status(201).json({ message: "Product added successfully", productId: result.insertId });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error", error });
+    const product = await Product.create({
+      name,
+      description,
+      price,
+      category,
+      image: imagePath, // store filename
+    });
+
+    res.status(201).json({
+      message: 'Product added successfully',
+      product,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to add product', error: err.message });
   }
+};
+
+// Serve uploaded images
+exports.getImage = (req, res) => {
+  const { filename } = req.params;
+  res.sendFile(path.join(__dirname, '../uploads', filename));
 };
 
 exports.getAllProducts = async (_req, res) => {

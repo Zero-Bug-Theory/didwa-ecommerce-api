@@ -38,6 +38,13 @@ router.get("/:id", productController.getProductById);
 router.put("/:id", verifyToken, isAdmin, productController.updateProduct);
 router.delete("/:id", verifyToken, isAdmin, productController.deleteProduct);
 
+// Routes
+router.post('/products', verifyToken,
+  isAdmin, upload.single('image'), productController.createProduct);
+
+// Serve images
+router.get('/uploads/:filename', productController.getImage);
+
 
 
 module.exports = router;
