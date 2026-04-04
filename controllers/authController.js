@@ -4,56 +4,69 @@ const User = require("../models/userModel");
 const db = require("../config/db"); 
 
 exports.register = async (req, res) => {
-  const { name, email, password } = req.body;
-  const role = user; // default
-
   try {
+    console.log("REGISTER STARTED");
+
+    const { name, email, password } = req.body;
+    const role = "user"; // ✅ FIXED
+
+    // ✅ Validate
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // ✅ Check if email exists
+    const [existing] = await db.query(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({
+        message: "Email already exists",
+      });
+    }
+
+    console.log("Hashing password...");
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    User.create(
-      { name, email, password: hashedPassword, role },
-      (err, result) => {
-        // ✅ HANDLE DUPLICATE EMAIL
-        if (err) {
-          if (err.code === "ER_DUP_ENTRY") {
-            return res.status(400).json({
-              message: "Email already exists",
-            });
-          }
+    console.log("Inserting user...");
 
-          return res.status(500).json({
-            message: "Database error",
-            error: err,
-          });
-        }
-
-        // ✅ CREATE USER OBJECT
-        const newUser = {
-          id: result.insertId,
-          name,
-          email,
-          role,
-        };
-
-        // ✅ CREATE TOKEN
-        const token = jwt.sign(
-          { id: newUser.id, isAdmin: newUser.isAdmin },
-          process.env.JWT_SECRET,
-          { expiresIn: "1d" }
-        );
-
-        // ✅ RETURN TOKEN + USER
-        res.status(201).json({
-          message: "User registered successfully",
-          token,
-          user: newUser, // ⭐ VERY IMPORTANT
-        });
-      }
+    const [result] = await db.query(
+      "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
+      [name, email, hashedPassword, role]
     );
+
+    const newUser = {
+      id: result.insertId,
+      name,
+      email,
+      role,
+    };
+
+    console.log("Generating token...");
+
+    const token = jwt.sign(
+      { id: newUser.id, role: newUser.role }, // ✅ FIXED
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    console.log("REGISTER SUCCESS");
+
+    return res.status(201).json({
+      message: "User registered successfully",
+      token,
+      user: newUser,
+    });
+
   } catch (error) {
-    res.status(500).json({
+    console.error("REGISTER ERROR:", error);
+
+    return res.status(500).json({
       message: "Server error",
-      error,
+      error: error.message || error.toString(),
     });
   }
 };
@@ -61,9 +74,13 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
   try {
     // 1️⃣ Get user from DB
-    const [rows] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
+   const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
     const user = rows[0];
 
     if (rows.length === 0) {

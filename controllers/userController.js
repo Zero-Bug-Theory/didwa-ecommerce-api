@@ -13,12 +13,12 @@ exports.getAllUsers = async (req, res) => {
 // Update user
 exports.updateUser = async (req, res) => {
   const { id } = req.params;
-  const { name, email, role } = req.body;
+  const { name, phone, address, email, role } = req.body; 
 
   try {
-    await db.promise().query(
-      "UPDATE users SET name=?, email=?, role=? WHERE id=?",
-      [name, email, role, id]
+    await db.query(
+      "UPDATE users SET name=?, phone=?, address=?, email=?, role=? WHERE id=?",
+      [name, phone, address, email, role, id]
     );
     res.json({ message: "User updated successfully" });
   } catch (err) {
