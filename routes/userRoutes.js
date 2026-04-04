@@ -21,7 +21,7 @@ const uploads = multer({ storage });
 
 
 // ================= PRODUCT UPLOAD =================
-router.post("/products", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
+router.post("/products", verifyToken, isAdmin, uploads.single("image"), async (req, res) => {
   try {
     const { name, description, price, category } = req.body;
 
