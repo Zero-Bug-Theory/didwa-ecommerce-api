@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
 });
 
 // ✅ THEN DEFINE UPLOAD
-const upload = multer({ storage });
+const uploads = multer({ storage });
 
 
 // ================= PRODUCT UPLOAD =================
