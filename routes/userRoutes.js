@@ -3,6 +3,7 @@ const router = express.Router();
 const userController = require("../controllers/userController");
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
+const multer = require("multer");
 
 // Admin-only routes
 router.get("/", verifyToken, isAdmin, userController.getAllUsers);
