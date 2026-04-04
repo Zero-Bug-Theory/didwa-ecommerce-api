@@ -65,6 +65,6 @@ router.put("/update", verifyToken, userController.updateProfile);
 
 
 // ================= PROFILE IMAGE =================
-router.post("/uploads", verifyToken, upload.single("image"), userController.uploadProfileImage);
+router.post("/uploads", verifyToken, uploads.single("image"), userController.uploadProfileImage);
 
 module.exports = router;
