@@ -3,32 +3,46 @@ const router = express.Router();
 const userController = require("../controllers/userController");
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
+
 const multer = require("multer");
+const path = require("path");
+
+// ✅ DEFINE STORAGE FIRST
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + path.extname(file.originalname));
+  },
+});
+
+// ✅ THEN DEFINE UPLOAD
 const upload = multer({ storage });
 
 
-router.post("/products/", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
+// ================= PRODUCT UPLOAD =================
+router.post("/products", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
   try {
     const { name, description, price, category } = req.body;
 
-    // Upload image to Cloudinary
-    const result = await cloudinary.uploader.upload_stream(
-      { folder: "products" }, 
-      async (error, result) => {
-        if (error) return res.status(500).json({ message: "Image upload failed", error });
-        
-        // Save product in DB
-        const [rows] = await db.query(
-          "INSERT INTO products (name, description, price, category, image_url) VALUES (?, ?, ?, ?, ?)",
-          [name, description, price, category, result.secure_url]
-        );
+    if (!req.file) {
+      return res.status(400).json({ message: "Image is required" });
+    }
 
-        res.status(201).json({ message: "Product added successfully", product: { id: rows.insertId, name, image: result.secure_url } });
-      }
+    const imagePath = `/uploads/${req.file.filename}`;
+
+    const [rows] = await db.query(
+      "INSERT INTO products (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)",
+      [name, description, price, category, imagePath]
     );
 
-    // Convert buffer to stream
-    result.end(req.file.buffer);
+    res.status(201).json({
+      message: "Product added successfully",
+      product: {
+        id: rows.insertId,
+        name,
+        image: imagePath,
+      },
+    });
 
   } catch (err) {
     console.error(err);
@@ -37,28 +51,19 @@ router.post("/products/", verifyToken, isAdmin, upload.single("image"), async (r
 });
 
 
-// Admin-only routes
+// ================= ADMIN ROUTES =================
 router.get("/", verifyToken, isAdmin, userController.getAllUsers);
 router.put("/:id", verifyToken, isAdmin, userController.updateUser);
 router.delete("/:id", verifyToken, isAdmin, userController.deleteUser);
-router.get('/users/:id', verifyToken, userController.getUserProfile);
+router.get("/users/:id", verifyToken, userController.getUserProfile);
 
-// ✅ GET LOGGED-IN USER
+
+// ================= USER PROFILE =================
 router.get("/me", verifyToken, userController.getUserProfile);
-
-// ✅ UPDATE PROFILE
 router.put("/update", verifyToken, userController.updateProfile);
 
-// ✅ UPLOAD IMAGE
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
 
+// ================= PROFILE IMAGE =================
 router.post("/upload", verifyToken, upload.single("image"), userController.uploadProfileImage);
+
 module.exports = router;
-
-
-
