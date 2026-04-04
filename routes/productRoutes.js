@@ -6,6 +6,7 @@ const db = require("../config/db");
 
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
+const productController = require("../controllers/productController");
 
 // ✅ Multer setup for temporary local storage
 const storage = multer.memoryStorage(); // store file in memory
