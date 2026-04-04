@@ -19,39 +19,6 @@ const storage = multer.diskStorage({
 // ✅ THEN DEFINE UPLOAD
 const uploads = multer({ storage });
 
-
-// ================= PRODUCT UPLOAD =================
-router.post("/products", verifyToken, isAdmin, uploads.single("image"), async (req, res) => {
-  try {
-    const { name, description, price, category } = req.body;
-
-    if (!req.file) {
-      return res.status(400).json({ message: "Image is required" });
-    }
-
-    const imagePath = `/uploads/${req.file.filename}`;
-
-    const [rows] = await db.query(
-      "INSERT INTO products (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)",
-      [name, description, price, category, imagePath]
-    );
-
-    res.status(201).json({
-      message: "Product added successfully",
-      product: {
-        id: rows.insertId,
-        name,
-        image: imagePath,
-      },
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error", error: err.toString() });
-  }
-});
-
-
 // ================= ADMIN ROUTES =================
 router.get("/", verifyToken, isAdmin, userController.getAllUsers);
 router.put("/:id", verifyToken, isAdmin, userController.updateUser);
