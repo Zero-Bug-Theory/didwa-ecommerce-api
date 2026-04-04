@@ -6,17 +6,6 @@ const isAdmin = require("../middleware/adminMiddleware");
 const multer = require("multer");
 const upload = multer({ storage });
 
-// Admin-only routes
-router.get("/", verifyToken, isAdmin, userController.getAllUsers);
-router.put("/:id", verifyToken, isAdmin, userController.updateUser);
-router.delete("/:id", verifyToken, isAdmin, userController.deleteUser);
-router.get('/users/:id', verifyToken, userController.getUserProfile);
-
-// ✅ GET LOGGED-IN USER
-router.get("/me", verifyToken, userController.getUserProfile);
-
-// ✅ UPDATE PROFILE
-router.put("/update", verifyToken, userController.updateProfile);
 
 // ✅ UPLOAD IMAGE
 const storage = multer.diskStorage({
@@ -56,6 +45,17 @@ router.post("/products/", verifyToken, isAdmin, upload.single("image"), async (r
 });
 
 
+// Admin-only routes
+router.get("/", verifyToken, isAdmin, userController.getAllUsers);
+router.put("/:id", verifyToken, isAdmin, userController.updateUser);
+router.delete("/:id", verifyToken, isAdmin, userController.deleteUser);
+router.get('/users/:id', verifyToken, userController.getUserProfile);
+
+// ✅ GET LOGGED-IN USER
+router.get("/me", verifyToken, userController.getUserProfile);
+
+// ✅ UPDATE PROFILE
+router.put("/update", verifyToken, userController.updateProfile);
 
 router.post("/upload", verifyToken, upload.single("image"), userController.uploadProfileImage);
 module.exports = router;
