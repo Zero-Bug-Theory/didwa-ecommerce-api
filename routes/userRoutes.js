@@ -4,8 +4,6 @@ const userController = require("../controllers/userController");
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
 const multer = require("multer");
-const path = require('path');
-const upload = multer({ storage });
 
 // Admin-only routes
 router.get("/", verifyToken, isAdmin, userController.getAllUsers);
@@ -85,7 +83,7 @@ router.post("/products", verifyToken, isAdmin, upload.single("image"), async (re
   }
 });
 
-// const upload = multer({ storage });
+const upload = multer({ storage });
 router.post("/upload", verifyToken, upload.single("image"), userController.uploadProfileImage);
 module.exports = router;
 
