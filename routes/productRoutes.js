@@ -24,13 +24,43 @@ router.get('/search', productController.searchProducts)
 // ✅ Category route (FIXED)
 router.get("/api/products/category/:category", productController.getProductsByCategory);
 
-router.post(
-  "/",
-  verifyToken,
-  isAdmin,
-  upload.single("image"),
-  productController.createProduct
-);
+router.post("/products", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
+  try {
+    const { name, description, price, category } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Image is required" });
+    }
+
+    const imagePath = req.file.filename; // store only filename
+
+    const [rows] = await db.query(
+      "INSERT INTO products (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)",
+      [name, description, price, category, imagePath]
+    );
+
+    res.status(201).json({
+      message: "Product added successfully",
+      product: {
+        id: rows.insertId,
+        name,
+        image: imagePath,
+      },
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err.toString() });
+  }
+});
+
+// router.post(
+//   "/",
+//   verifyToken,
+//   isAdmin,
+//   upload.single("image"),
+//   productController.createProduct
+// );
 // Other product routes
 router.get("/", productController.getAllProducts);
 router.get("/search", productController.searchProducts);
