@@ -1,27 +1,58 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const cloudinary = require("../config/cloudinary");
+const cloudinary = require("../config/cloudinary"); // your cloudinary config
 const db = require("../config/db");
-// const { v2: cloudinary } = require('cloudinary');
-// const streamifier = require('streamifier');
+
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
-const productController = require("../controllers/productController");
 
-
-// ✅ CLOUDINARY STORAGE
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: "didwa_products",
-    allowed_formats: ["jpg", "png", "jpeg"],
-  },
-});
-
+// ✅ Multer setup for temporary local storage
+const storage = multer.memoryStorage(); // store file in memory
 const upload = multer({ storage });
 
-router.post("/", verifyToken, isAdmin, upload.single("image"), productController.createProduct);
+// ✅ CREATE PRODUCT
+router.post("/", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
+  try {
+    const { name, description, price, category } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Image required" });
+    }
+
+    // Upload file buffer directly to Cloudinary
+    const result = await cloudinary.uploader.upload_stream(
+      { folder: "didwa_products" },
+      async (error, cloudResult) => {
+        if (error) return res.status(500).json({ message: "Cloudinary upload failed", error });
+
+        // Save product in DB
+        const [dbResult] = await db.query(
+          "INSERT INTO products (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)",
+          [name, description, price, category, cloudResult.secure_url]
+        );
+
+        res.status(201).json({
+          message: "Product added successfully",
+          product: {
+            id: dbResult.insertId,
+            name,
+            image: cloudResult.secure_url,
+          },
+        });
+      }
+    );
+
+    // Pipe multer file buffer into Cloudinary uploader
+    result.end(req.file.buffer);
+
+  } catch (err) {
+    console.error("CREATE PRODUCT ERROR:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+module.exports = router;
 
 
 // ✅ OTHER ROUTES
