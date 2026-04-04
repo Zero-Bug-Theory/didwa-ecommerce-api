@@ -54,13 +54,14 @@ router.post("/products", verifyToken, isAdmin, upload.single("image"), async (re
   }
 });
 
-// router.post(
-//   "/",
-//   verifyToken,
-//   isAdmin,
-//   upload.single("image"),
-//   productController.createProduct
-// );
+router.post(
+  "/",
+  verifyToken,
+  isAdmin,
+  upload.single("image"),
+  productController.createProduct
+);
+
 // Other product routes
 router.get("/", productController.getAllProducts);
 router.get("/search", productController.searchProducts);
