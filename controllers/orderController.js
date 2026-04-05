@@ -21,10 +21,7 @@ exports.createOrder = async (req, res) => {
 
     // 1. Get cart items
     const [cartItems] = await db.query(
-      `SELECT c.*, p.price 
-       FROM carts c 
-       JOIN products p ON c.product_id = p.id
-       WHERE c.user_id = ?`,
+      "SELECT c.*, p.name, p.price FROM cart c JOIN products p ON c.product_id = p.id WHERE c.user_id=?",
       [userId]
     );
 
@@ -38,41 +35,23 @@ exports.createOrder = async (req, res) => {
       total += item.price * item.quantity;
     });
 
-    // Optional: validate
-    if (!fullName || !address || !city || !phone) {
-      return res.status(400).json({ message: "Delivery details are required" });
-    }
-
     // 3. Create order
-    const reference = uuidv4();
-
     const [orderResult] = await db.query(
-      `INSERT INTO orders (user_id, full_name, address, city, phone, total_amount, reference, status )
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
-      [userId, fullName, address, city, phone, total, reference, 'pending' ]
+      `INSERT INTO orders (user_id, full_name, address, city, phone, total_amount, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [userId, full_name, address, city, phone, total, "pending"]
     );
 
     const orderId = orderResult.insertId;
 
-    // 4. Save order items
-    const [orders] = await db.query("SELECT * FROM orders ORDER BY id DESC");
-    for (let order of orders) {
-      const [items] = await db.query(`
-        SELECT oi.*, p.name, p.image
-        FROM order_items oi
-        JOIN products p ON oi.product_id = p.id
-        WHERE oi.order_id = ?
-      `, [order.id]);
-
-      order.items = items; // 🔥 attach items
+    // 4. INSERT INTO order_items ✅ THIS IS WHAT YOU ARE MISSING
+    for (let item of cartItems) {
+      await db.query(
+        `INSERT INTO order_items (order_id, product_id, quantity, price)
+         VALUES (?, ?, ?, ?)`,
+        [orderId, item.product_id, item.quantity, item.price]
+      );
     }
-    // for (let item of cartItems) {
-    //   await db.query(
-    //     `INSERT INTO order_items (order_id, product_id, quantity, price)
-    //      VALUES (?, ?, ?, ?)`,
-    //     [orderId, item.product_id, item.quantity, item.price]
-    //   );
-    // }
 
     // 5. Initialize Paystack
     const payment = await axios.post(
