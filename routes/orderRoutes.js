@@ -9,7 +9,7 @@ router.post("/", verifyToken, orderController.createOrder);
 // Get user orders
 // router.get("/orders/users", verifyToken, orderController.getOrders);
 
-router.get("/", verifyToken, async (req, res) => {
+router.get("/orders/users", verifyToken, async (req, res) => {
   const userId = req.user.id;
 
   try {
