@@ -9,7 +9,6 @@ const Order = {
     );
   },
 
-  const userId = req.user.id;
   getByUserId: (userId, callback) => {
     try {
       // 1. Get orders
