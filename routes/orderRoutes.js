@@ -10,15 +10,15 @@ router.post("/", verifyToken, orderController.createOrder);
 router.get("/users", verifyToken, orderController.getOrders);
 
 // ordersRoutes.js
-router.get("/", verifyToken, async (req, res) => {
-  const userId = req.user.id;
-  try {
-    const [rows] = await db.query("SELECT * FROM orders WHERE user_id = ?", [userId]);
-    res.json({ orders: rows });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.toString() });
-  }
-});
+// router.get("/", verifyToken, async (req, res) => {
+//   const userId = req.user.id;
+//   try {
+//     const [rows] = await db.query("SELECT * FROM orders WHERE user_id = ?", [userId]);
+//     res.json({ orders: rows });
+//   } catch (err) {
+//     res.status(500).json({ message: "Server error", error: err.toString() });
+//   }
+// });
 
 router.put("/status/:id", verifyToken, orderController.updateOrderStatus);
 
