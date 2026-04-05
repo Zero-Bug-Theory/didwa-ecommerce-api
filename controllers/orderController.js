@@ -21,7 +21,7 @@ exports.createOrder = async (req, res) => {
 
     // 1. Get cart items
     const [cartItems] = await db.query(
-      "SELECT c.*, p.name, p.price FROM cart c JOIN products p ON c.product_id = p.id WHERE c.user_id=?",
+      "SELECT c.*, p.name, p.price FROM carts c JOIN products p ON c.product_id = p.id WHERE c.user_id=?",
       [userId]
     );
 
