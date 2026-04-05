@@ -40,7 +40,7 @@ exports.createOrder = async (req, res) => {
     // 3. Create order
     const [orderResult] = await db.query(
       `INSERT INTO orders (user_id, full_name, address, city, phone, total_amount, reference, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [userId, full_name, address, city, phone, total, reference, "pending"]
     );
 
