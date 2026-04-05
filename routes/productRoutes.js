@@ -1,9 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../config/cloudinary");
 const db = require("../config/db");
+
+const { v2: cloudinary } = require('cloudinary');
+const streamifier = require('streamifier');
 
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
