@@ -21,37 +21,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-
-// ✅ CREATE PRODUCT (ONLY ONE ROUTE!)
-router.post("/", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
-  try {
-    const { name, description, price, category } = req.body;
-
-    if (!req.file) {
-      return res.status(400).json({ message: "Image required" });
-    }
-
-    const imageUrl = req.file.path;
-
-    const [result] = await db.query(
-      "INSERT INTO products (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)",
-      [name, description, price, category, imageUrl]
-    );
-
-    res.status(201).json({
-      message: "Product added successfully",
-      product: {
-        id: result.insertId,
-        name,
-        image: imageUrl,
-      },
-    });
-
-  } catch (err) {
-    console.error("CREATE PRODUCT ERROR:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-});
+router.post("/", verifyToken, isAdmin, upload.single("image"), productController.createProduct);
 
 
 // ✅ OTHER ROUTES

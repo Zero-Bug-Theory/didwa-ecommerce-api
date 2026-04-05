@@ -1,36 +1,53 @@
-const db = require("../config/db");
+const db = require("../config/db"); // your MySQL connection
 const cloudinary = require("../config/cloudinary");
 
 // --------------------------
 // Create Product (Admin Only)
 // --------------------------
+
+
 exports.createProduct = async (req, res) => {
   try {
     const { name, description, price, category } = req.body;
 
-    if (!req.file || !req.file.path) {
+    if (!req.file) {
       return res.status(400).json({ message: "Image is required" });
     }
 
-    // Cloudinary URL
-    const imageUrl = req.file.path;
+    // Upload image to Cloudinary
+    const result = await cloudinary.uploader.upload_stream(
+      { folder: "didwa_products_images" },
+      async (error, result) => {
+        if (error) {
+          console.error("Cloudinary upload error:", error);
+          return res.status(500).json({ message: "Image upload failed", error });
+        }
 
-    const [result] = await db.query(
-      "INSERT INTO products (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)",
-      [name, description, price, category, imageUrl]
+        const imageUrl = result.secure_url; // public URL
+
+        // Save product to DB
+        const [dbResult] = await db.query(
+          "INSERT INTO products (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)",
+          [name, description, price, category, imageUrl]
+        );
+
+        res.status(201).json({
+          message: "Product added successfully",
+          product: {
+            id: dbResult.insertId,
+            name,
+            image: imageUrl,
+            description,
+            price,
+            category,
+          },
+        });
+      }
     );
 
-    res.status(201).json({
-      message: "Product added successfully",
-      product: {
-        id: result.insertId,
-        name,
-        description,
-        price,
-        category,
-        image: imageUrl,
-      },
-    });
+    // Convert buffer to stream
+    result.end(req.file.buffer);
+
   } catch (err) {
     console.error("CREATE PRODUCT ERROR:", err);
     res.status(500).json({ message: "Server error", error: err.message });
