@@ -9,7 +9,7 @@ exports.createOrder = async (req, res) => {
     const userId = req.user.id;
 
     // ✅ GET DATA FROM REQUEST BODY
-    const { full_name, address, city, phone } = req.body;
+    const { fullName, address, city, phone } = req.body;
 
     // 🔥 GET EMAIL FROM DB
     const [users] = await db.query(
@@ -41,7 +41,7 @@ exports.createOrder = async (req, res) => {
     const [orderResult] = await db.query(
       `INSERT INTO orders (user_id, full_name, address, city, phone, total_amount, reference, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, full_name, address, city, phone, total, reference, "pending"]
+      [userId, fullName, address, city, phone, total, reference, "pending"]
     );
 
     const orderId = orderResult.insertId;
