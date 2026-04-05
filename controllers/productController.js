@@ -1,135 +1,86 @@
-// const Product = require("../models/productModel");
-const Product = require("../models/productModel");
-const db = require("../config/db"); // your MySQL connection
-const fs = require("fs");// your MySQL connection
-const multer = require("multer");
-const path = require('path');
+const db = require("../config/db");
+const cloudinary = require("../config/cloudinary");
 
-// Set up multer to store uploaded images in "uploads/" folder
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) { 
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-
-const upload = multer({ storage: storage });
-
-// ✅ Create product (admin only)
-// productController.js
-// exports.createProduct = async (req, res) => {
-//   try {
-//     const { name, description, price, category } = req.body;
-//     const image = req.file ? req.file.filename : null;
-
-//     if (!name || !description || !price || !category || !image) {
-//       return res.status(400).json({ message: "All fields are required" });
-//     }
-
-//     const result = await Product.create(name, description, price, image, category);
-
-//     res.status(201).json({ message: "Product added successfully", productId: result.insertId });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server error", error });
-//   }
-// };
-
-
-// Handle product creation with image upload
+// --------------------------
+// Create Product (Admin Only)
+// --------------------------
 exports.createProduct = async (req, res) => {
   try {
-    let imagePath = null;
-
-    // Multer stores file info in req.file
-    if (req.file) {
-      imagePath = req.file.filename; // save just the filename
-    }
-
     const { name, description, price, category } = req.body;
 
-    const product = await Product.create({
-      name,
-      description,
-      price,
-      category,
-      image: imagePath, // store filename
-    });
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ message: "Image is required" });
+    }
+
+    // Cloudinary URL
+    const imageUrl = req.file.path;
+
+    const [result] = await db.query(
+      "INSERT INTO products (name, description, price, category, image) VALUES (?, ?, ?, ?, ?)",
+      [name, description, price, category, imageUrl]
+    );
 
     res.status(201).json({
-      message: 'Product added successfully',
-      product,
+      message: "Product added successfully",
+      product: {
+        id: result.insertId,
+        name,
+        description,
+        price,
+        category,
+        image: imageUrl,
+      },
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to add product', error: err.message });
+    console.error("CREATE PRODUCT ERROR:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-// Serve uploaded images
-exports.getImage = (req, res) => {
-  const { filename } = req.params;
-  res.sendFile(path.join(__dirname, '../uploads', filename));
-};
-
+// --------------------------
+// Get All Products
+// --------------------------
 exports.getAllProducts = async (_req, res) => {
   try {
-    const products = await Product.getAll();
+    const [products] = await db.query("SELECT * FROM products ORDER BY id DESC");
     res.json(products);
-  } catch (error) {
-    console.error("GET PRODUCTS ERROR:", error);
-
-    res.status(500).json({
-      message: "Error fetching products",
-      error: error.message || error.toString()
-    });
+  } catch (err) {
+    console.error("GET PRODUCTS ERROR:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-exports.getProductById = (req, res) => {
-  Product.getById(req.params.id, (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results[0]);
-  });
+// --------------------------
+// Get Product By ID
+// --------------------------
+exports.getProductById = async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM products WHERE id = ?", [req.params.id]);
+    if (!rows.length) return res.status(404).json({ message: "Product not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("GET PRODUCT BY ID ERROR:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
 };
 
-
-///Get product by Category
+// --------------------------
+// Get Products By Category
+// --------------------------
 exports.getProductsByCategory = async (req, res) => {
   try {
     const { category } = req.params;
-    const { search = "", sort = "" } = req.query;
-
-    let query = "SELECT * FROM products WHERE LOWER(category) = LOWER(?)";
-    let params = [category];
-
-    if (search) {
-      query += " AND name LIKE ?";
-      params.push(`%${search}%`);
-    }
-
-    if (sort === "low") {
-      query += " ORDER BY price ASC";
-    } else if (sort === "high") {
-      query += " ORDER BY price DESC";
-    } else {
-      query += " ORDER BY id DESC";
-    }
-
-    const [rows] = await db.query(query, params);
-
-    res.json(rows); // ✅ VERY IMPORTANT
+    const [rows] = await db.query("SELECT * FROM products WHERE LOWER(category) = LOWER(?)", [category]);
+    res.json(rows);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: err.message });
+    console.error("GET PRODUCTS BY CATEGORY ERROR:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-
-// ✅ Search products
-// productsController.js
+// --------------------------
+// Search Products
+// --------------------------
 exports.searchProducts = async (req, res) => {
   try {
     const searchQuery = (req.query.q || "").trim();
@@ -145,7 +96,6 @@ exports.searchProducts = async (req, res) => {
         "(LOWER(name) LIKE LOWER(?) OR LOWER(description) LIKE LOWER(?))"
       );
       sql += " AND " + conditions.join(" AND ");
-
       keywords.forEach((kw) => {
         const val = `%${kw}%`;
         params.push(val, val);
@@ -153,43 +103,56 @@ exports.searchProducts = async (req, res) => {
     }
 
     if (selectedCategory !== "All") {
-      sql += " AND category = ?";
+      sql += " AND LOWER(category) = LOWER(?)";
       params.push(selectedCategory);
     }
 
     const [results] = await db.query(sql, params);
-
-    res.json({ products: results }); // ✅ clean response
+    res.json({ products: results });
   } catch (err) {
     console.error("SEARCH ERROR:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-
+// --------------------------
 // Update Product
+// --------------------------
 exports.updateProduct = async (req, res) => {
   const { id } = req.params;
-  const { name, price, description, category, image } = req.body;
+  const { name, price, description, category } = req.body;
+
+  let imageUrl = null;
+  if (req.file && req.file.path) {
+    imageUrl = req.file.path; // new Cloudinary URL
+  }
 
   try {
-    await db.query(
-      "UPDATE products SET name=?, price=?, description=?, category=?, image=? WHERE id=?",
-      [name, price, description, category, image, id]
-    );
+    const query = imageUrl
+      ? "UPDATE products SET name=?, price=?, description=?, category=?, image=? WHERE id=?"
+      : "UPDATE products SET name=?, price=?, description=?, category=? WHERE id=?";
+    const params = imageUrl
+      ? [name, price, description, category, imageUrl, id]
+      : [name, price, description, category, id];
+
+    await db.query(query, params);
     res.json({ message: "Product updated successfully" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("UPDATE PRODUCT ERROR:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
+// --------------------------
 // Delete Product
+// --------------------------
 exports.deleteProduct = async (req, res) => {
   const { id } = req.params;
   try {
     await db.query("DELETE FROM products WHERE id=?", [id]);
     res.json({ message: "Product deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("DELETE PRODUCT ERROR:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
