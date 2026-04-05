@@ -7,7 +7,8 @@ const verifyToken = require("../middleware/authMiddleware");
 router.post("/", verifyToken, orderController.createOrder);
 
 // Get user orders
-// router.get("/", verifyToken, orderController.getOrders);
+router.get("/", verifyToken, orderController.getOrders);
+
 // ordersRoutes.js
 router.get("/user", verifyToken, async (req, res) => {
   const userId = req.user.id;
