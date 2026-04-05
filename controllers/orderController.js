@@ -55,13 +55,23 @@ exports.createOrder = async (req, res) => {
     const orderId = orderResult.insertId;
 
     // 4. Save order items
-    for (let item of cartItems) {
-      await db.query(
-        `INSERT INTO order_items (order_id, product_id, quantity, price)
-         VALUES (?, ?, ?, ?)`,
-        [orderId, item.product_id, item.quantity, item.price]
-      );
+    for (let order of orders) {
+      const [items] = await db.query(`
+        SELECT oi.*, p.name, p.image
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        WHERE oi.order_id = ?
+      `, [order.id]);
+
+      order.items = items; // 🔥 attach items
     }
+    // for (let item of cartItems) {
+    //   await db.query(
+    //     `INSERT INTO order_items (order_id, product_id, quantity, price)
+    //      VALUES (?, ?, ?, ?)`,
+    //     [orderId, item.product_id, item.quantity, item.price]
+    //   );
+    // }
 
     // 5. Initialize Paystack
     const payment = await axios.post(
@@ -135,13 +145,35 @@ exports.getOrders = (req, res) => {
 // Get all orders (admin)
 exports.getAllOrders = async (req, res) => {
   try {
-    const [orders] = await db.query("SELECT * FROM orders");
-    res.json({ success: true, orders });
-  } catch (error) {
-    console.error("GET ALL ORDERS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    const [orders] = await db.query("SELECT * FROM orders ORDER BY id DESC");
+
+    for (let order of orders) {
+      const [items] = await db.query(`
+        SELECT oi.*, p.name, p.image
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        WHERE oi.order_id = ?
+      `, [order.id]);
+
+      order.items = items; // 🔥 attach items
+    }
+
+    res.json(orders);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching orders" });
   }
 };
+// exports.getAllOrders = async (req, res) => {
+//   try {
+//     const [orders] = await db.query("SELECT * FROM orders");
+//     res.json({ success: true, orders });
+//   } catch (error) {
+//     console.error("GET ALL ORDERS ERROR:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 exports.updateOrderStatus = async (req, res) => {
   try {
