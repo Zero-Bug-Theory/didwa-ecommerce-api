@@ -9,7 +9,7 @@ exports.createOrder = async (req, res) => {
     const userId = req.user.id;
 
     // ✅ GET DATA FROM REQUEST BODY
-    const { fullName, address, city, phone } = req.body;
+    const { full_name, address, city, phone } = req.body;
 
     // 🔥 GET EMAIL FROM DB
     const [users] = await db.query(
