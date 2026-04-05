@@ -12,5 +12,5 @@ const Order = {
   getByUserId: (userId, callback) => {
     db.query("SELECT * FROM orders WHERE user_id = ?", [userId], callback);
   },
-
+};
 module.exports = Order;
