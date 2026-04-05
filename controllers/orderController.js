@@ -35,6 +35,8 @@ exports.createOrder = async (req, res) => {
       total += item.price * item.quantity;
     });
 
+    const reference = uuidv4();
+
     // 3. Create order
     const [orderResult] = await db.query(
       `INSERT INTO orders (user_id, full_name, address, city, phone, total_amount, reference, status)
