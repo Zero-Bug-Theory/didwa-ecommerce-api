@@ -10,7 +10,7 @@ router.post("/", verifyToken, orderController.createOrder);
 router.get("/users", verifyToken, orderController.getOrders);
 
 // ordersRoutes.js
-router.get("/user", verifyToken, async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   const userId = req.user.id;
   try {
     const [rows] = await db.query("SELECT * FROM orders WHERE user_id = ?", [userId]);
