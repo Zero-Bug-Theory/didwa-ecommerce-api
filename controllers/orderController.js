@@ -20,7 +20,7 @@ exports.createOrder = async (req, res) => {
     const email = users[0].email;
 
     // 1. Get cart items
-    const [orders] = await db.query(
+    const [cartItems] = await db.query(
       `SELECT c.*, p.price 
        FROM carts c 
        JOIN products p ON c.product_id = p.id
@@ -28,13 +28,13 @@ exports.createOrder = async (req, res) => {
       [userId]
     );
 
-    if (orders.length === 0) {
+    if (cartItems.length === 0) {
       return res.status(400).json({ message: "Cart is empty" });
     }
 
     // 2. Calculate total
     let total = 0;
-    orders.forEach(item => {
+    cartItems.forEach(item => {
       total += item.price * item.quantity;
     });
 
@@ -55,6 +55,7 @@ exports.createOrder = async (req, res) => {
     const orderId = orderResult.insertId;
 
     // 4. Save order items
+    const [orders] = await db.query("SELECT * FROM orders ORDER BY id DESC");
     for (let order of orders) {
       const [items] = await db.query(`
         SELECT oi.*, p.name, p.image
