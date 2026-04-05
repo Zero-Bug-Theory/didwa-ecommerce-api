@@ -3,6 +3,8 @@ const router = express.Router();
 const userController = require("../controllers/userController");
 const verifyToken = require("../middleware/authMiddleware");
 const isAdmin = require("../middleware/adminMiddleware");
+const multer = require("multer");
+const path = require('path');
 
 // Admin-only routes
 router.get("/", verifyToken, isAdmin, userController.getAllUsers);
@@ -27,7 +29,7 @@ const storage = multer.diskStorage({
 
 
 
-router.post("/products/add", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
+router.post("/products/", verifyToken, isAdmin, upload.single("image"), async (req, res) => {
   try {
     const { name, description, price, category } = req.body;
 
