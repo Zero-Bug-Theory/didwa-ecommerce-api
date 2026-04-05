@@ -116,13 +116,43 @@ exports.verifyPayment = async (req, res) => {
     }
   };
 
-exports.getOrders = (req, res) => {
-  const userId = req.user.id;
 
-  Order.getByUserId(userId, (err, results) => {
-    if (err) return res.status(500).json(err);
-    res.json(results);
-  });
+exports.getOrders = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // ✅ Get user orders
+    const [orders] = await db.query(
+      "SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC",
+      [userId]
+    );
+
+    // ✅ Attach items to each order
+    for (let order of orders) {
+      const [items] = await db.query(
+        `SELECT oi.*, p.name 
+         FROM order_items oi
+         JOIN products p ON oi.product_id = p.id
+         WHERE oi.order_id = ?`,
+        [order.id]
+      );
+
+      order.items = items;
+    }
+
+    // ✅ IMPORTANT: must return this format
+    res.json({
+      success: true,
+      orders: orders,
+    });
+
+  } catch (err) {
+    console.error("GET USER ORDERS ERROR:", err);
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
+  }
 };
 
 // Get all orders (admin)
