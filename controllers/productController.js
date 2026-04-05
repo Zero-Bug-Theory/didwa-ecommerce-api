@@ -125,7 +125,7 @@ exports.searchProducts = async (req, res) => {
     }
 
     const [results] = await db.query(sql, params);
-    res.json({ products: results });
+    res.json({results});
   } catch (err) {
     console.error("SEARCH ERROR:", err);
     res.status(500).json({ message: "Server error", error: err.message });
