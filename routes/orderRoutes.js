@@ -7,42 +7,7 @@ const verifyToken = require("../middleware/authMiddleware");
 router.post("/", verifyToken, orderController.createOrder);
 
 // Get user orders
-// router.get("/orders/users", verifyToken, orderController.getOrders);
-
-router.get("/orders", verifyToken, async (req, res) => {
-  const userId = req.user.id;
-
-  try {
-    // 1. Get orders
-    const [orders] = await db.query(
-      "SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC",
-      [userId]
-    );
-
-    // 2. Attach items to each order
-    for (let order of orders) {
-      const [items] = await db.query(
-        `SELECT oi.*, p.name 
-         FROM order_items oi
-         JOIN products p ON oi.product_id = p.id
-         WHERE oi.order_id = ?`,
-        [order.id]
-      );
-
-      order.items = items;
-    }
-
-    // 3. Return
-    res.json({ orders });
-
-  } catch (err) {
-    console.error("USER ORDERS ERROR:", err);
-    res.status(500).json({
-      message: "Server error",
-      error: err.message
-    });
-  }
-});
+router.get("/orders", verifyToken, orderController.getOrders);
 
 router.put("/status/:id", verifyToken, orderController.updateOrderStatus);
 
